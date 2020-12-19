@@ -18,6 +18,6 @@ function CreateUser({username, email, onChange, onCreate}) {
             <button onClick={onCreate}>등록</button>
         </div>
     );
-}
+};
 
-export default CreateUser;
+export default React.memo(CreateUser); //React.memo 컴포넌트 리렌더링 방지

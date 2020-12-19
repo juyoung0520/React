@@ -1,25 +1,15 @@
-import React, {useRef, useState} from 'react';
+import React, {useRef, useReducer, useMemo, useCallback} from 'react';
 import UserList from './UserList';
 import CreateUser from './CreateUser';
+import useInputs from './useInputs';
 
+function countActiveUsers(users) {
+  console.log('활성 사용자 수를 세는 중...');
+  return users.filter(user => user.active).length;
+}
 
-function App() {
-  const [inputs, setInputs] = useState({
-    username: '',
-    email: ''
-  });
-
-  const {username, email} = inputs;
-
-  const onChange = e => {
-    const {name, value} = e.target; // e.target == 이벤트가 발생한 DOM, input DOM
-    setInputs({
-      ...inputs,
-      [name]: value
-    });
-  };
-
-  const [users, setUsers] = useState([
+const initialState = {
+  users: [
     {
         id: 1,
         username: 'juyoung',
@@ -27,56 +17,95 @@ function App() {
         active: true
     },
     {
-        id: 2,
         username: 'jinu',
         email: 'gle00@naver.com',
         active: false
     }
-  ]);
+  ]
+};
 
-  const nextId = useRef(3); //파라미터 .current의 기본값
+function reducer(state, action) {
+  switch (action.type) {
+    case 'CREATE_USER':
+      return {
+        inputs: initialState.inputs,
+        users: state.users.concat(action.user)
+      };
 
-  const onCreate = () => { 
-    const user =  {
-      id: nextId.current,
-      username,
-      email
-    };
+    case 'TOGGLE_USER':
+      return {
+        ...state,
+        users: state.users.map(user =>
+          user.id === action.id
+            ? {...user, active: !user.active}
+            : user
+          )
+      };
 
-    //setUsers([...users, user]); //새로운 배열만들어서 기존 내용 복사 후, 다음 멤버 넣어줌 방법1
-    setUsers(users.concat(user));
+    case 'REMOVE_USER':
+      return {
+        ...state,
+        users: state.users.filter(user => user.id !== action.id)
+      };
 
-    setInputs({
-      username:'',
-      email:''
+    default:
+      throw new Error('Unhandled action');
+  }
+}
+
+function App() {
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const [form, onChange, reset] = useInputs({
+    username: '',
+    email: ''
+  });
+  const {username, email} = form;
+  const nextId = useRef(3);
+  const {users} = state;
+
+  const onCreate = useCallback(() => {
+    dispatch({
+      type: 'CREATE_USER',
+      user: {
+        id: nextId.current,
+        username,
+        email
+      }
     });
-
     nextId.current += 1;
-    console.log(nextId.current);   // 컴포넌트 리랜더링 x 바로 수정 조회 .current 수정, 조회
-  };
+    reset();
+  }, [username, email, reset]); 
 
-  const onRemove = id => {
-    setUsers(users.filter(user => user.id !== id)); 
-  };
+  const onToggle = useCallback(id => {
+    dispatch({
+      type: 'TOGGLE_USER',
+      id
+    });
+  }, []);
 
-  const onToggle = id => {
-    setUsers(
-      users.map(user => user.id === id ? {...user, active: !user.active} : user)
-    );
-  };
+  const onRemove = useCallback(id => {
+    dispatch({
+      type: 'REMOVE_USER',
+      id
+    });
+  }, []);
 
+  const count = useMemo(() => countActiveUsers(users), [users]);
+ 
   return (
     <> {/*fragment 태그*/}
     <CreateUser 
       username={username} 
       email={email} 
-      onChange={onChange} 
+      onChange={onChange}
       onCreate={onCreate}
     />
     <UserList 
-      users={users}
-      onRemove={onRemove}
-      onToggle={onToggle}/>
+        users={users} 
+        onToggle={onToggle} 
+        onRemove={onRemove}
+    />
+    <div>활성 사용자 수: {count}</div>
     </>
   );
 }

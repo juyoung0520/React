@@ -19,21 +19,18 @@ function User({user, onRemove, onToggle}) {
 }; //한 파일에 여러 컴포넌트 있어도 됨
 
 function UserList({users, onRemove, onToggle}) {
-
     return (
         <div>
-            {
-                users.map(user => 
-                    <User 
-                        user={user} 
-                        key={user.id}
-                        onRemove={onRemove}
-                        onToggle={onToggle}
-                    />
-                )
-            } {/*배열 렌더링시 key 있어야 효율적 (밖의 중괄호{}는 변수이기 때문에!)*/} 
+            {users.map(user => (
+                <User 
+                    user={user} 
+                    key={user.id}
+                    onRemove={onRemove}
+                    onToggle={onToggle}
+                />
+            ))} {/*배열 렌더링시 key 있어야 효율적 (밖의 중괄호{}는 변수이기 때문에!)*/} 
         </div>
     );
 }
 
-export default UserList;
+export default React.memo(UserList);
